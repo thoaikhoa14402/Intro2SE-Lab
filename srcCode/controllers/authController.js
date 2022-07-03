@@ -139,7 +139,8 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 // Reset password handle
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on the token
-  const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+  const resetToken = req.body.token;
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
   /* find user */
   const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gte: Date.now() } });
   // 2) If token has not expired, and there is user, set the new password
@@ -156,7 +157,26 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     status: 'success',
     token,
   });
-  //next();
+});
+
+// verify verification code
+exports.verifyCode = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  const resetToken = req.body.token;
+  const decoded = await promisify(jwt.verify)(resetToken, process.env.JWT_SECRET);
+  const { verification } = decoded;
+  if (verification !== req.body.verificationCode)
+    return next(new AppError('Invalid verification code. Please try again', 400));
+  // create new reset token, send to client (security)
+  const newResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  // hash new reset token, and save it to database
+  user.passwordResetToken = crypto.createHash('sha256').update(newResetToken).digest('hex');
+  await user.save({ validateBeforeSave: false });
+  res.status(200).json({
+    status: 'success',
+    token: newResetToken,
+  });
+  next();
 });
 
 // Update password handle
