@@ -13,6 +13,13 @@ const signToken = function (id) {
   });
 };
 
+// sign passwordResetToken
+const signPasswordResetToken = function (verification) {
+  return jwt.sign({ verification: verification }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+};
+
 // sign up handle
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
@@ -91,7 +98,6 @@ exports.restrictTo = function (...roles) {
     next();
   };
 };
-
 // Forgot password handle
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email
@@ -100,22 +106,26 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     return next(new AppError('There is no user with that email address', 404));
   }
   // 2) Generate the random reset token
-  const resetToken = user.createPasswordResetToken();
-  await user.save({ validateBeforeSave: false });
-  // 3) Send it to user's email
-  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}}`;
-  const message = `Forgot your pasword? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!  `;
 
+  // signPasswordResetToken
+  const verification = crypto.randomBytes(3).toString('hex');
+  const resetToken = signPasswordResetToken(verification);
+  // 3) Send it to user's email
+  const message = `
+  Mã xác nhận của bạn là ${verification}
+  Vui lòng nhập mã này để có thể thay đổi mật khẩu.`;
   try {
     await sendEmail({
       email: user.email,
-      subject: 'Your password reset token (valid for 10min)',
+      subject: 'Your verification code (valid for 10min)',
       message,
     });
-
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // now time + 10 minitues
+    await user.save(); // dont need to turn off the validator, we want  validator to confirm password is equal to passwordConfirm
     res.status(200).json({
       status: 'success',
-      message: 'Token sent to email!',
+      token: resetToken,
+      message: 'Verification code sent to email!',
     });
   } catch (err) {
     // reset token and expires property if error occurs
