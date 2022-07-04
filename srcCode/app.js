@@ -7,6 +7,7 @@ const AppError = require('./utilities/appError');
 const globalErrorhandler = require('./controllers/errorController');
 
 const userRouter = require('./routes/userRoutes');
+const productRouter = require('./routes/productRoutes');
 
 const mime = {
   html: 'text/html',
@@ -29,6 +30,7 @@ app.use(cors()); // cap phep cho toan bo clients co the truy cap
 
 // mounting routers
 app.use('/tcf/v1/users', userRouter); // mounting new router on route (URL)
+app.use('/tcf/v1/products', productRouter);
 
 //app.get('/tcf/v1/users', (req,res) -)
 
