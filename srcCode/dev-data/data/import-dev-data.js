@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Product = require('../../models/productModel');
 const User = require('../../models/userModel');
+/* eslint-disable */
 
 dotenv.config({ path: './config.env' });
 
@@ -25,7 +26,7 @@ products = products.map((el) => {
   return el;
 });
 
-// const DATA INTO DB
+// IMPORT DATA INTO DB
 const importProducts = async () => {
   try {
     await Product.create(products);

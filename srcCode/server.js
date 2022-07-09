@@ -1,36 +1,42 @@
-/* eslint-disable */
-
+// listening for request
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+/* eslint-disable */
 
 process.on('uncaughtException', (err) => {
-  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+  console.log('Uncaught Rejection. Shutting down...');
   console.log(err.name, err.message);
-  process.exit(1);
+  process.exit(1); // 0 is success, 1 is uncaught exception
 });
 
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-const DB = process.env.DATABASE.replace('<PASSWORD>', process.env.DATABASE_PASSWORD);
-
 mongoose
-  .connect(DB, {
+  .connect(process.env.DATABASE, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
   })
-  .then(() => console.log('DB connection successful!'));
+  .then(() => {
+    console.log('DB connection successful!');
+  });
 
-const port = process.env.PORT || 8000;
+const port = 3000 || process.env.PORT;
+
 const server = app.listen(port, () => {
-  console.log(`App running on port ${port}...`);
+  console.log(`App is running on port ${port}...`);
 });
 
+const socketIO = require('socket.io')(server, { cors: { origin: '*' } });
+exports.onPayment = function (data) {
+  socketIO.emit('order', data);
+};
+
 process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
+  console.log('Unhandled Rejection. Shutting down...');
   console.log(err.name, err.message);
   server.close(() => {
-    process.exit(1);
+    process.exit(1); // 0 is success, 1 is uncaught exception
   });
 });
