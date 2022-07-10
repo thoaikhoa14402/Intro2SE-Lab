@@ -70,7 +70,8 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
 // delete user
 exports.deleteUser = catchAsync(async (req, res, next) => {
-  const { id } = req.params.id;
+  //const { id } = req.params.id;
+  const id = req.params.id;
   await User.findByIdAndDelete(id);
   res.status(200).json({
     status: 'success',
@@ -80,7 +81,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
 // block user
 exports.blockUser = catchAsync(async (req, res, next) => {
-  const { id } = req.params.id;
+  const id = req.params.id;
   const user = await User.findOne({ _id: id });
   user.status = 'inactive';
   await user.save();
@@ -92,7 +93,7 @@ exports.blockUser = catchAsync(async (req, res, next) => {
 
 // update user
 exports.updateUser = catchAsync(async (req, res, next) => {
-  const { id } = req.params.id;
+  const id = req.params.id;
   const user = await User.findByIdAndUpdate(id, req.body);
   res.status(200).json({
     status: 'success',
